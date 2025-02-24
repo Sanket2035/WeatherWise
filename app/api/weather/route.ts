@@ -78,15 +78,19 @@ export async function GET() {
 
     return NextResponse.json(processedData)
   } catch (error) {
-    console.error("Error fetching weather data:", {
-      message: error.message,
-      stack: error.stack,
-    })
+    if (error instanceof Error) {
+      console.error("Error fetching weather data:", {
+        message: error.message,
+        stack: error.stack,
+      })
+    } else {
+      console.error("Error fetching weather data:", error)
+    }
 
     return NextResponse.json(
       {
         error: "Failed to fetch weather data. Please try again later.",
-        details: error.message,
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     )
