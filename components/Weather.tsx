@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { AlertCircle } from "lucide-react"
 import CurrentWeather from "./CurrentWeather"
 import DailyForecast from "./DailyForecast"
 import HourlyForecast from "./HourlyForecast"
@@ -20,24 +21,54 @@ export default function Weather() {
   const fetchWeatherData = async () => {
     try {
       const response = await fetch("/api/weather")
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorData = await response.json()
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
       }
+
       const data = await response.json()
+
       if (data.error) {
         throw new Error(data.error)
       }
+
       setWeatherData(data)
-      setLoading(false)
+      setError(null)
     } catch (err) {
+      console.error("Weather data fetch error:", err)
       setError(err.message || "Failed to fetch weather data")
+    } finally {
       setLoading(false)
     }
   }
 
-  if (loading) return <div className="text-white text-2xl">Loading...</div>
-  if (error) return <div className="text-red-500 text-2xl">{error}</div>
-  if (!weatherData) return <div className="text-white text-2xl">No weather data available</div>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="text-white text-2xl">Loading weather data...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px] bg-red-50 rounded-lg p-4">
+        <div className="flex items-center text-red-800">
+          <AlertCircle className="mr-2" />
+          <span>{error}</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (!weatherData) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="text-white text-2xl">No weather data available</div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-8">

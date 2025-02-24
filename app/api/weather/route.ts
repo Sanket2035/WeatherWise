@@ -5,60 +5,91 @@ export async function GET() {
 
   if (!apiKey) {
     console.error("OpenWeatherMap API key is not set")
-    return NextResponse.json({ error: "API key is not configured" }, { status: 500 })
+    return NextResponse.json({ error: "Weather API configuration is missing" }, { status: 500 })
   }
 
   const lat = "40.7128"
   const lon = "-74.0060"
-  const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`
 
   try {
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    const data = await response.json()
+    // Fetch current weather data
+    const weatherResponse = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`,
+    )
 
-    // Process and transform the data as needed
+    if (!weatherResponse.ok) {
+      const errorData = await weatherResponse.json()
+      console.error("Weather API Error:", errorData)
+      throw new Error(`Weather API error: ${errorData.message || weatherResponse.statusText}`)
+    }
+
+    const currentData = await weatherResponse.json()
+
+    // Fetch 5 day forecast data
+    const forecastResponse = await fetch(
+      `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`,
+    )
+
+    if (!forecastResponse.ok) {
+      const errorData = await forecastResponse.json()
+      console.error("Forecast API Error:", errorData)
+      throw new Error(`Forecast API error: ${errorData.message || forecastResponse.statusText}`)
+    }
+
+    const forecastData = await forecastResponse.json()
+
+    // Process and transform the data
     const processedData = {
       current: {
-        temperature: data.current?.temp,
-        feelsLike: data.current?.feels_like,
-        humidity: data.current?.humidity,
-        uvIndex: data.current?.uvi,
-        windSpeed: data.current?.wind_speed,
+        temperature: currentData.main?.temp ?? "N/A",
+        feelsLike: currentData.main?.feels_like ?? "N/A",
+        humidity: currentData.main?.humidity ?? "N/A",
+        uvIndex: "N/A", // UV Index requires separate API call or subscription
+        windSpeed: currentData.wind?.speed ?? "N/A",
       },
       daily:
-        data.daily?.map((day) => ({
-          date: new Date(day.dt * 1000).toLocaleDateString(),
-          tempMax: day.temp?.max,
-          tempMin: day.temp?.min,
-        })) || [],
+        forecastData.list
+          ?.filter((item: any, index: number) => index % 8 === 0) // Get one reading per day
+          .map((day: any) => ({
+            date: new Date(day.dt * 1000).toLocaleDateString(),
+            tempMax: day.main?.temp_max ?? "N/A",
+            tempMin: day.main?.temp_min ?? "N/A",
+          })) ?? [],
       hourly:
-        data.hourly?.map((hour) => ({
+        forecastData.list?.slice(0, 24).map((hour: any) => ({
           time: new Date(hour.dt * 1000).toLocaleTimeString(),
-          temperature: hour.temp,
-          precipitation: hour.pop ? hour.pop * 100 : 0,
-        })) || [],
+          temperature: hour.main?.temp ?? "N/A",
+          precipitation: hour.pop ? (hour.pop * 100).toFixed(0) : "0",
+        })) ?? [],
       airQuality: {
-        aqi: data.current?.aqi,
-        pm25: data.current?.pm2_5,
-        pm10: data.current?.pm10,
+        aqi: "N/A", // Air quality requires separate API call or subscription
+        pm25: "N/A",
+        pm10: "N/A",
       },
-      alerts: data.alerts || [],
+      alerts: [], // Alerts require separate API call or subscription
       ephemeris: {
-        sunrise: data.current?.sunrise ? new Date(data.current.sunrise * 1000).toLocaleTimeString() : "N/A",
-        sunset: data.current?.sunset ? new Date(data.current.sunset * 1000).toLocaleTimeString() : "N/A",
-        moonrise: data.daily?.[0]?.moonrise ? new Date(data.daily[0].moonrise * 1000).toLocaleTimeString() : "N/A",
-        moonset: data.daily?.[0]?.moonset ? new Date(data.daily[0].moonset * 1000).toLocaleTimeString() : "N/A",
-        moonPhase: data.daily?.[0]?.moon_phase ?? "N/A",
+        sunrise: currentData.sys?.sunrise ? new Date(currentData.sys.sunrise * 1000).toLocaleTimeString() : "N/A",
+        sunset: currentData.sys?.sunset ? new Date(currentData.sys.sunset * 1000).toLocaleTimeString() : "N/A",
+        moonrise: "N/A", // Moon data requires separate API call or subscription
+        moonset: "N/A",
+        moonPhase: "N/A",
       },
     }
 
     return NextResponse.json(processedData)
   } catch (error) {
-    console.error("Error fetching weather data:", error)
-    return NextResponse.json({ error: "Failed to fetch weather data" }, { status: 500 })
+    console.error("Error fetching weather data:", {
+      message: error.message,
+      stack: error.stack,
+    })
+
+    return NextResponse.json(
+      {
+        error: "Failed to fetch weather data. Please try again later.",
+        details: error.message,
+      },
+      { status: 500 },
+    )
   }
 }
 
