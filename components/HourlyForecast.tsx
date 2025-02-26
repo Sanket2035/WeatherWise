@@ -1,4 +1,12 @@
-export default function HourlyForecast({ data }) {
+interface HourlyForecastProps {
+  data: Array<{
+    time: string;
+    temperature: number;
+    precipitation: number;
+  }>;
+}
+
+export default function HourlyForecast({ data }: HourlyForecastProps) {
   return (
     <div className="bg-yellow-100 p-6 rounded-lg mb-8">
       <h2 className="text-2xl font-semibold mb-4">Hourly Forecast</h2>

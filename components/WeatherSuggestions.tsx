@@ -46,7 +46,6 @@ const foodSuggestions = {
     "How about a refreshing smoothie or iced tea to beat the heat? 🥤🍹",
     "Grill weather! Time for some BBQ and outdoor dining. 🍖🥗",
   ],
-  Clouds: ["Clou  🥤🍹", "Grill weather! Time for some BBQ and outdoor dining. 🍖🥗"],
   Clouds: [
     "Cloudy days call for comfort food. How about a warm bowl of soup? 🍲",
     "Perfect weather for baking! Whip up some cookies or a cozy pie. 🍪🥧",
@@ -79,7 +78,7 @@ const foodSuggestions = {
   ],
 }
 
-function getWeatherType(weatherDescription) {
+function getWeatherType(weatherDescription: string) {
   if (weatherDescription.includes("clear")) return "Clear"
   if (weatherDescription.includes("cloud")) return "Clouds"
   if (weatherDescription.includes("rain")) return "Rain"
@@ -90,7 +89,11 @@ function getWeatherType(weatherDescription) {
   return "Clear" // default
 }
 
-export default function WeatherSuggestions({ weatherData }) {
+interface WeatherData {
+  weatherDescription: string;
+}
+
+export default function WeatherSuggestions({ weatherData }: { weatherData: WeatherData }) {
   const weatherType = getWeatherType(weatherData.weatherDescription.toLowerCase())
 
   const randomClothing =

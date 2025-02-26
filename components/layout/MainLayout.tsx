@@ -6,16 +6,20 @@ import Header from "./Header"
 import LocationSidebar from "./LocationSidebar"
 import WeatherBackground from "../WeatherBackground"
 
-export default function MainLayout({ children }) {
-  const [weatherCondition, setWeatherCondition] = useState("Clear")
+import { ReactNode } from "react"
+
+export default function MainLayout({ children }: { children: ReactNode }) {
+  const [weatherCondition, setWeatherCondition] = useState<"Clear" | "Clouds" | "Rain" | "Snow" | "Thunderstorm" | "Drizzle" | "Mist" | "Fog" | "Haze" | "Smoke" | "Dust" | "Sand" | "Ash" | "Squall" | "Tornado">("Clear")
 
   useEffect(() => {
     // Fetch current weather data to set the background
     const fetchWeather = async () => {
       try {
-        const response = await fetch("/api/weather")
+        const response = await fetch("/api/weather?lat=0&lon=0") // Default coordinates
         const data = await response.json()
-        setWeatherCondition(data.current.weatherDescription.split(" ")[0])
+        if (data && data.current && data.current.weatherDescription) {
+          setWeatherCondition(data.current.weatherDescription.split(" ")[0])
+        }
       } catch (error) {
         console.error("Error fetching weather for background:", error)
       }

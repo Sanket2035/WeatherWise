@@ -1,4 +1,10 @@
-export default function AirQuality({ data }) {
+interface AirQualityData {
+  aqi: number;
+  pm25: number;
+  pm10: number;
+}
+
+export default function AirQuality({ data }: { data: AirQualityData }) {
   return (
     <div className="bg-purple-100 p-6 rounded-lg mb-8">
       <h2 className="text-2xl font-semibold mb-4">Air Quality</h2>

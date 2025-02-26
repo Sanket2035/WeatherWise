@@ -1,4 +1,12 @@
-export default function DailyForecast({ data }) {
+interface DailyForecastProps {
+  data: {
+    date: string;
+    tempMax: number;
+    tempMin: number;
+  }[];
+}
+
+export default function DailyForecast({ data }: DailyForecastProps) {
   return (
     <div className="bg-green-100 p-6 rounded-lg mb-8">
       <h2 className="text-2xl font-semibold mb-4">16-Day Forecast</h2>

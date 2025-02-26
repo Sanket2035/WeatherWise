@@ -10,10 +10,25 @@ import LocationSearch from "./LocationSearch"
 import FavoriteCities from "./FavoriteCities"
 
 export default function Weather() {
-  const [weatherData, setWeatherData] = useState(null)
+  interface WeatherData {
+    current: {
+      sunrise: string;
+      sunset: string;
+      windSpeed: number;
+      windDirection: number;
+      humidity: number;
+      visibility: number;
+      cloudiness: number;
+    };
+    daily: any; // Replace 'any' with the actual type if available
+    hourly: any; // Replace 'any' with the actual type if available
+    airQuality: any; // Replace 'any' with the actual type if available
+  }
+
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [location, setLocation] = useState({ lat: null, lon: null, name: null })
+  const [error, setError] = useState<string | null>(null)
+  const [location, setLocation] = useState<{ lat: number | null; lon: number | null; name: string | null }>({ lat: null, lon: null, name: null })
 
   useEffect(() => {
     if (location.lat && location.lon) {
@@ -45,7 +60,7 @@ export default function Weather() {
     }
   }
 
-  const fetchWeatherData = async (lat, lon) => {
+  const fetchWeatherData = async (lat: number, lon: number) => {
     try {
       setLoading(true)
       const response = await fetch(`/api/weather?lat=${lat}&lon=${lon}`)
@@ -65,13 +80,17 @@ export default function Weather() {
       setError(null)
     } catch (err) {
       console.error("Weather data fetch error:", err)
-      setError(err.message || "Failed to fetch weather data")
+      if (err instanceof Error) {
+        setError(err.message || "Failed to fetch weather data")
+      } else {
+        setError("Failed to fetch weather data")
+      }
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSearch = (searchLocation) => {
+  const handleSearch = (searchLocation: { lat: number; lon: number; name: string }) => {
     setLocation(searchLocation)
   }
 
@@ -98,7 +117,11 @@ export default function Weather() {
     <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-8">
       <h1 className="text-4xl font-bold mb-8 text-center">Weather Forecast</h1>
       <LocationSearch onSearch={handleSearch} />
-      <FavoriteCities onSelectFavorite={handleSearch} />
+      <FavoriteCities 
+        favorites={[]} 
+        onSelectFavorite={handleSearch} 
+        onRemoveFavorite={() => {}} 
+      />
       {weatherData && (
         <>
           <div className="flex justify-between items-center mb-4">

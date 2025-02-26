@@ -1,4 +1,12 @@
-export default function Ephemeris({ data }) {
+interface EphemerisData {
+  sunrise: string;
+  sunset: string;
+  moonrise: string;
+  moonset: string;
+  moonPhase: string;
+}
+
+export default function Ephemeris({ data }: { data: EphemerisData }) {
   return (
     <div className="bg-indigo-100 p-6 rounded-lg">
       <h2 className="text-2xl font-semibold mb-4">Sun & Moon</h2>

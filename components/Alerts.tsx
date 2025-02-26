@@ -1,4 +1,13 @@
-export default function Alerts({ data }) {
+interface Alert {
+  event: string;
+  description: string;
+}
+
+interface AlertsProps {
+  data: Alert[];
+}
+
+export default function Alerts({ data }: AlertsProps) {
   return (
     <div className="bg-red-100 p-6 rounded-lg mb-8">
       <h2 className="text-2xl font-semibold mb-4">Weather Alerts</h2>

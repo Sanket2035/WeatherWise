@@ -8,8 +8,8 @@ import { useToast } from "@/components/ui/use-toast"
 
 export default function LocationSidebar() {
   const [query, setQuery] = useState("")
-  const [favorites, setFavorites] = useState([])
-  const [currentLocation, setCurrentLocation] = useState(null)
+  const [favorites, setFavorites] = useState<{ name: string }[]>([])
+  const [currentLocation, setCurrentLocation] = useState<{ name: string } | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export default function LocationSidebar() {
     }
   }, [])
 
-  const handleSearch = async (e) => {
+  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!query.trim()) return
 
@@ -53,7 +53,7 @@ export default function LocationSidebar() {
     }
   }
 
-  const toggleFavorite = async (location) => {
+  const toggleFavorite = async (location: { name: string }) => {
     const isFavorite = favorites.some((fav) => fav.name === location.name)
     let newFavorites
 
