@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const lat = searchParams.get("lat")
+  const lon = searchParams.get("lon")
   const apiKey = process.env.OPENWEATHERMAP_API_KEY
 
   if (!apiKey) {
@@ -8,8 +11,9 @@ export async function GET() {
     return NextResponse.json({ error: "Weather API configuration is missing" }, { status: 500 })
   }
 
-  const lat = "40.7128"
-  const lon = "-74.0060"
+  if (!lat || !lon) {
+    return NextResponse.json({ error: "Latitude and longitude are required" }, { status: 400 })
+  }
 
   try {
     // Fetch current weather data
@@ -38,59 +42,63 @@ export async function GET() {
 
     const forecastData = await forecastResponse.json()
 
+    // Fetch air pollution data
+    const pollutionResponse = await fetch(
+      `http://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`,
+    )
+
+    if (!pollutionResponse.ok) {
+      const errorData = await pollutionResponse.json()
+      console.error("Air Pollution API Error:", errorData)
+      throw new Error(`Air Pollution API error: ${errorData.message || pollutionResponse.statusText}`)
+    }
+
+    const pollutionData = await pollutionResponse.json()
+
     // Process and transform the data
     const processedData = {
       current: {
-        temperature: currentData.main?.temp ?? "N/A",
-        feelsLike: currentData.main?.feels_like ?? "N/A",
-        humidity: currentData.main?.humidity ?? "N/A",
-        uvIndex: "N/A", // UV Index requires separate API call or subscription
-        windSpeed: currentData.wind?.speed ?? "N/A",
+        temperature: currentData.main.temp,
+        feelsLike: currentData.main.feels_like,
+        humidity: currentData.main.humidity,
+        pressure: currentData.main.pressure,
+        windSpeed: currentData.wind.speed,
+        windDirection: currentData.wind.deg,
+        weatherDescription: currentData.weather[0].description,
+        weatherIcon: currentData.weather[0].icon,
+        sunrise: new Date(currentData.sys.sunrise * 1000).toLocaleTimeString(),
+        sunset: new Date(currentData.sys.sunset * 1000).toLocaleTimeString(),
+        visibility: currentData.visibility,
+        cloudiness: currentData.clouds.all,
       },
-      daily:
-        forecastData.list
-          ?.filter((item: any, index: number) => index % 8 === 0) // Get one reading per day
-          .map((day: any) => ({
-            date: new Date(day.dt * 1000).toLocaleDateString(),
-            tempMax: day.main?.temp_max ?? "N/A",
-            tempMin: day.main?.temp_min ?? "N/A",
-          })) ?? [],
-      hourly:
-        forecastData.list?.slice(0, 24).map((hour: any) => ({
-          time: new Date(hour.dt * 1000).toLocaleTimeString(),
-          temperature: hour.main?.temp ?? "N/A",
-          precipitation: hour.pop ? (hour.pop * 100).toFixed(0) : "0",
-        })) ?? [],
+      daily: forecastData.list
+        .filter((item: any, index: number) => index % 8 === 0)
+        .map((day: any) => ({
+          date: new Date(day.dt * 1000).toLocaleDateString(),
+          tempMax: day.main.temp_max,
+          tempMin: day.main.temp_min,
+          weatherDescription: day.weather[0].description,
+          weatherIcon: day.weather[0].icon,
+        })),
+      hourly: forecastData.list.slice(0, 24).map((hour: any) => ({
+        time: new Date(hour.dt * 1000).toLocaleTimeString(),
+        temperature: hour.main.temp,
+        precipitation: hour.pop * 100,
+        weatherIcon: hour.weather[0].icon,
+      })),
       airQuality: {
-        aqi: "N/A", // Air quality requires separate API call or subscription
-        pm25: "N/A",
-        pm10: "N/A",
-      },
-      alerts: [], // Alerts require separate API call or subscription
-      ephemeris: {
-        sunrise: currentData.sys?.sunrise ? new Date(currentData.sys.sunrise * 1000).toLocaleTimeString() : "N/A",
-        sunset: currentData.sys?.sunset ? new Date(currentData.sys.sunset * 1000).toLocaleTimeString() : "N/A",
-        moonrise: "N/A", // Moon data requires separate API call or subscription
-        moonset: "N/A",
-        moonPhase: "N/A",
+        aqi: pollutionData.list[0].main.aqi,
+        components: pollutionData.list[0].components,
       },
     }
 
     return NextResponse.json(processedData)
   } catch (error) {
-    if (error instanceof Error) {
-      console.error("Error fetching weather data:", {
-        message: error.message,
-        stack: error.stack,
-      })
-    } else {
-      console.error("Error fetching weather data:", error)
-    }
-
+    console.error("Error fetching weather data:", error)
     return NextResponse.json(
       {
         error: "Failed to fetch weather data. Please try again later.",
-        details: error instanceof Error ? error.message : "Unknown error",
+        details: (error instanceof Error) ? error.message : "Unknown error",
       },
       { status: 500 },
     )

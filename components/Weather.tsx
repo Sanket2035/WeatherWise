@@ -1,26 +1,54 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Sunrise, Sunset, Wind, Droplets, Eye, Cloud } from "lucide-react"
 import CurrentWeather from "./CurrentWeather"
 import DailyForecast from "./DailyForecast"
 import HourlyForecast from "./HourlyForecast"
 import AirQuality from "./AirQuality"
-import Alerts from "./Alerts"
-import Ephemeris from "./Ephemeris"
+import LocationSearch from "./LocationSearch"
+import FavoriteCities from "./FavoriteCities"
 
 export default function Weather() {
   const [weatherData, setWeatherData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [location, setLocation] = useState({ lat: null, lon: null, name: null })
 
   useEffect(() => {
-    fetchWeatherData()
-  }, [])
+    if (location.lat && location.lon) {
+      fetchWeatherData(location.lat, location.lon)
+    } else {
+      getCurrentLocation()
+    }
+  }, [location])
 
-  const fetchWeatherData = async () => {
+  const getCurrentLocation = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+            name: "Current Location",
+          })
+        },
+        (error) => {
+          console.error("Error getting location:", error)
+          setError("Unable to get current location. Please search for a city.")
+          setLoading(false)
+        },
+      )
+    } else {
+      setError("Geolocation is not supported by your browser. Please search for a city.")
+      setLoading(false)
+    }
+  }
+
+  const fetchWeatherData = async (lat, lon) => {
     try {
-      const response = await fetch("/api/weather")
+      setLoading(true)
+      const response = await fetch(`/api/weather?lat=${lat}&lon=${lon}`)
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -43,6 +71,10 @@ export default function Weather() {
     }
   }
 
+  const handleSearch = (searchLocation) => {
+    setLocation(searchLocation)
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
@@ -62,23 +94,56 @@ export default function Weather() {
     )
   }
 
-  if (!weatherData) {
-    return (
-      <div className="flex items-center justify-center min-h-[200px]">
-        <div className="text-white text-2xl">No weather data available</div>
-      </div>
-    )
-  }
-
   return (
     <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-8">
       <h1 className="text-4xl font-bold mb-8 text-center">Weather Forecast</h1>
-      <CurrentWeather data={weatherData.current} />
-      <DailyForecast data={weatherData.daily} />
-      <HourlyForecast data={weatherData.hourly} />
-      <AirQuality data={weatherData.airQuality} />
-      <Alerts data={weatherData.alerts} />
-      <Ephemeris data={weatherData.ephemeris} />
+      <LocationSearch onSearch={handleSearch} />
+      <FavoriteCities onSelectFavorite={handleSearch} />
+      {weatherData && (
+        <>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">{location.name}</h2>
+          </div>
+          <CurrentWeather data={weatherData.current} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+            <div className="bg-blue-100 p-4 rounded-lg">
+              <h3 className="text-xl font-semibold mb-2">Sun & Moon</h3>
+              <div className="flex items-center mb-2">
+                <Sunrise className="mr-2" />
+                <span>Sunrise: {weatherData.current.sunrise}</span>
+              </div>
+              <div className="flex items-center">
+                <Sunset className="mr-2" />
+                <span>Sunset: {weatherData.current.sunset}</span>
+              </div>
+            </div>
+            <div className="bg-green-100 p-4 rounded-lg">
+              <h3 className="text-xl font-semibold mb-2">Additional Info</h3>
+              <div className="flex items-center mb-2">
+                <Wind className="mr-2" />
+                <span>
+                  Wind: {weatherData.current.windSpeed} m/s, {weatherData.current.windDirection}°
+                </span>
+              </div>
+              <div className="flex items-center mb-2">
+                <Droplets className="mr-2" />
+                <span>Humidity: {weatherData.current.humidity}%</span>
+              </div>
+              <div className="flex items-center mb-2">
+                <Eye className="mr-2" />
+                <span>Visibility: {weatherData.current.visibility / 1000} km</span>
+              </div>
+              <div className="flex items-center">
+                <Cloud className="mr-2" />
+                <span>Cloudiness: {weatherData.current.cloudiness}%</span>
+              </div>
+            </div>
+          </div>
+          <DailyForecast data={weatherData.daily} />
+          <HourlyForecast data={weatherData.hourly} />
+          <AirQuality data={weatherData.airQuality} />
+        </>
+      )}
     </div>
   )
 }
