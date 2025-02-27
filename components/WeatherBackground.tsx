@@ -20,11 +20,7 @@ const weatherBackgrounds = {
   Tornado: "bg-gradient-to-br from-gray-900 to-gray-700",
 }
 
-interface WeatherBackgroundProps {
-  weatherCondition: keyof typeof weatherBackgrounds;
-}
-
-export default function WeatherBackground({ weatherCondition }: WeatherBackgroundProps) {
+export default function WeatherBackground({ weatherCondition }) {
   const [background, setBackground] = useState(weatherBackgrounds.Clear)
 
   useEffect(() => {

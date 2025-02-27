@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Shirt, Coffee, Umbrella, Snowflake, Sun, Cloud } from "lucide-react"
 
 const clothingSuggestions = {
@@ -78,7 +79,7 @@ const foodSuggestions = {
   ],
 }
 
-function getWeatherType(weatherDescription: string) {
+function getWeatherType(weatherDescription) {
   if (weatherDescription.includes("clear")) return "Clear"
   if (weatherDescription.includes("cloud")) return "Clouds"
   if (weatherDescription.includes("rain")) return "Rain"
@@ -89,16 +90,50 @@ function getWeatherType(weatherDescription: string) {
   return "Clear" // default
 }
 
-interface WeatherData {
-  weatherDescription: string;
-}
+export default function WeatherSuggestions({ weatherData }) {
+  const [suggestions, setSuggestions] = useState({ clothing: "", food: "", weatherTip: "" })
 
-export default function WeatherSuggestions({ weatherData }: { weatherData: WeatherData }) {
-  const weatherType = getWeatherType(weatherData.weatherDescription.toLowerCase())
+  useEffect(() => {
+    if (weatherData) {
+      const weatherType = getWeatherType(weatherData.weatherDescription.toLowerCase())
+      const randomClothing =
+        clothingSuggestions[weatherType][Math.floor(Math.random() * clothingSuggestions[weatherType].length)]
+      const randomFood = foodSuggestions[weatherType][Math.floor(Math.random() * foodSuggestions[weatherType].length)]
 
-  const randomClothing =
-    clothingSuggestions[weatherType][Math.floor(Math.random() * clothingSuggestions[weatherType].length)]
-  const randomFood = foodSuggestions[weatherType][Math.floor(Math.random() * foodSuggestions[weatherType].length)]
+      let weatherTip = ""
+      switch (weatherType) {
+        case "Clear":
+          weatherTip = "Don't forget your sunscreen and stay hydrated!"
+          break
+        case "Clouds":
+          weatherTip = "It's a great day for outdoor activities without the harsh sun."
+          break
+        case "Rain":
+          weatherTip = "Remember to carry an umbrella and wear waterproof shoes."
+          break
+        case "Snow":
+          weatherTip = "Drive carefully and enjoy the winter wonderland!"
+          break
+        case "Thunderstorm":
+          weatherTip = "Stay indoors and keep away from windows during the storm."
+          break
+        case "Drizzle":
+          weatherTip = "A light raincoat should be sufficient for this weather."
+          break
+        case "Mist":
+          weatherTip = "Drive carefully and use your low beam headlights if visibility is reduced."
+          break
+        default:
+          weatherTip = "Enjoy your day, whatever the weather!"
+      }
+
+      setSuggestions({ clothing: randomClothing, food: randomFood, weatherTip })
+    }
+  }, [weatherData])
+
+  if (!weatherData) {
+    return <div>Loading suggestions...</div>
+  }
 
   return (
     <div className="space-y-6">
@@ -107,7 +142,7 @@ export default function WeatherSuggestions({ weatherData }: { weatherData: Weath
           <Shirt className="h-6 w-6 text-blue-500" />
           <h2 className="text-xl font-semibold">Clothing Suggestion</h2>
         </div>
-        <p className="text-lg">{randomClothing}</p>
+        <p className="text-lg">{suggestions.clothing}</p>
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
@@ -115,26 +150,26 @@ export default function WeatherSuggestions({ weatherData }: { weatherData: Weath
           <Coffee className="h-6 w-6 text-orange-500" />
           <h2 className="text-xl font-semibold">Food Suggestion</h2>
         </div>
-        <p className="text-lg">{randomFood}</p>
+        <p className="text-lg">{suggestions.food}</p>
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center gap-2 mb-4">
-          {weatherType === "Clear" && <Sun className="h-6 w-6 text-yellow-500" />}
-          {weatherType === "Clouds" && <Cloud className="h-6 w-6 text-gray-500" />}
-          {weatherType === "Rain" && <Umbrella className="h-6 w-6 text-blue-500" />}
-          {weatherType === "Snow" && <Snowflake className="h-6 w-6 text-blue-300" />}
+          {getWeatherType(weatherData.weatherDescription.toLowerCase()) === "Clear" && (
+            <Sun className="h-6 w-6 text-yellow-500" />
+          )}
+          {getWeatherType(weatherData.weatherDescription.toLowerCase()) === "Clouds" && (
+            <Cloud className="h-6 w-6 text-gray-500" />
+          )}
+          {getWeatherType(weatherData.weatherDescription.toLowerCase()) === "Rain" && (
+            <Umbrella className="h-6 w-6 text-blue-500" />
+          )}
+          {getWeatherType(weatherData.weatherDescription.toLowerCase()) === "Snow" && (
+            <Snowflake className="h-6 w-6 text-blue-300" />
+          )}
           <h2 className="text-xl font-semibold">Weather Tip</h2>
         </div>
-        <p className="text-lg">
-          {weatherType === "Clear" && "Don't forget your sunscreen and stay hydrated!"}
-          {weatherType === "Clouds" && "It's a great day for outdoor activities without the harsh sun."}
-          {weatherType === "Rain" && "Remember to carry an umbrella and wear waterproof shoes."}
-          {weatherType === "Snow" && "Drive carefully and enjoy the winter wonderland!"}
-          {weatherType === "Thunderstorm" && "Stay indoors and keep away from windows during the storm."}
-          {weatherType === "Drizzle" && "A light raincoat should be sufficient for this weather."}
-          {weatherType === "Mist" && "Drive carefully and use your low beam headlights if visibility is reduced."}
-        </p>
+        <p className="text-lg">{suggestions.weatherTip}</p>
       </div>
     </div>
   )

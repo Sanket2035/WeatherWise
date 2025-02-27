@@ -6,10 +6,8 @@ import Header from "./Header"
 import LocationSidebar from "./LocationSidebar"
 import WeatherBackground from "../WeatherBackground"
 
-import { ReactNode } from "react"
-
-export default function MainLayout({ children }: { children: ReactNode }) {
-  const [weatherCondition, setWeatherCondition] = useState<"Clear" | "Clouds" | "Rain" | "Snow" | "Thunderstorm" | "Drizzle" | "Mist" | "Fog" | "Haze" | "Smoke" | "Dust" | "Sand" | "Ash" | "Squall" | "Tornado">("Clear")
+export default function MainLayout({ children }) {
+  const [weatherCondition, setWeatherCondition] = useState("Clear")
 
   useEffect(() => {
     // Fetch current weather data to set the background

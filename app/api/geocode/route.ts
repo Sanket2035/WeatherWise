@@ -34,11 +34,10 @@ export async function GET(request: Request) {
     return NextResponse.json(data)
   } catch (error) {
     console.error("Error fetching geocoding data:", error)
-    const errorMessage = error instanceof Error ? error.message : "Unknown error"
     return NextResponse.json(
       {
         error: "Failed to fetch location data",
-        details: errorMessage,
+        details: error.message,
       },
       { status: 500 },
     )

@@ -1,14 +1,6 @@
 import { CloudRain, Sun, Wind } from "lucide-react"
 
-interface WeatherData {
-  temperature?: number;
-  feelsLike?: number;
-  uvIndex?: number;
-  windSpeed?: number;
-  humidity?: number;
-}
-
-export default function CurrentWeather({ data }: { data: WeatherData }) {
+export default function CurrentWeather({ data }) {
   if (!data) {
     return <div>Loading current weather data...</div>
   }

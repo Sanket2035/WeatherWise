@@ -1,25 +1,39 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { MapPin, Search, Star } from "lucide-react"
+import { MapPin, Search, Star, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 
-export default function LocationSidebar() {
+export default function LocationSidebar({ onLocationSelect }) {
   const [query, setQuery] = useState("")
-  const [favorites, setFavorites] = useState<{ name: string }[]>([])
-  const [currentLocation, setCurrentLocation] = useState<{ name: string } | null>(null)
+  const [favorites, setFavorites] = useState([])
+  const [currentLocation, setCurrentLocation] = useState(null)
+  const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
-    // Load favorites from JSON file
-    fetch("/api/favorites")
-      .then((response) => response.json())
-      .then((data) => setFavorites(data))
-      .catch((error) => console.error("Error loading favorites:", error))
+    loadFavorites()
+    getCurrentLocation()
+  }, [])
 
-    // Get current location
+  const loadFavorites = async () => {
+    try {
+      const response = await fetch("/api/favorites")
+      const data = await response.json()
+      setFavorites(data)
+    } catch (error) {
+      console.error("Error loading favorites:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load favorite locations",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const getCurrentLocation = () => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -37,23 +51,38 @@ export default function LocationSidebar() {
         },
       )
     }
-  }, [])
+  }
 
-  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSearch = async (e) => {
     e.preventDefault()
     if (!query.trim()) return
 
+    setLoading(true)
     try {
       const response = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`)
       const data = await response.json()
-      // Handle search results...
-      console.log(data)
+      if (data && data.length > 0) {
+        onLocationSelect(data[0])
+      } else {
+        toast({
+          title: "Location not found",
+          description: "Please try a different search term",
+          variant: "destructive",
+        })
+      }
     } catch (error) {
       console.error("Search error:", error)
+      toast({
+        title: "Error",
+        description: "Failed to search for location",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
     }
   }
 
-  const toggleFavorite = async (location: { name: string }) => {
+  const toggleFavorite = async (location) => {
     const isFavorite = favorites.some((fav) => fav.name === location.name)
     let newFavorites
 
@@ -73,7 +102,6 @@ export default function LocationSidebar() {
 
     setFavorites(newFavorites)
 
-    // Save to JSON file via API
     try {
       await fetch("/api/favorites", {
         method: "POST",
@@ -84,6 +112,11 @@ export default function LocationSidebar() {
       })
     } catch (error) {
       console.error("Error saving favorites:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update favorites",
+        variant: "destructive",
+      })
     }
   }
 
@@ -99,12 +132,20 @@ export default function LocationSidebar() {
             className="pl-8"
           />
         </div>
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+          Search
+        </Button>
       </form>
 
       <div className="mt-6">
         <h3 className="text-sm font-medium mb-2">Current Location</h3>
         {currentLocation && (
-          <Button variant="ghost" className="w-full justify-start gap-2">
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2"
+            onClick={() => onLocationSelect(currentLocation)}
+          >
             <MapPin className="h-4 w-4" />
             {currentLocation.name}
           </Button>
@@ -119,7 +160,7 @@ export default function LocationSidebar() {
               key={location.name}
               variant="ghost"
               className="w-full justify-start gap-2"
-              onClick={() => toggleFavorite(location)}
+              onClick={() => onLocationSelect(location)}
             >
               <Star className="h-4 w-4" />
               {location.name}

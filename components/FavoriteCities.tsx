@@ -1,16 +1,6 @@
 import { X } from "lucide-react"
 
-interface City {
-  name: string;
-}
-
-interface FavoriteCitiesProps {
-  favorites: City[];
-  onSelectFavorite: (city: City) => void;
-  onRemoveFavorite: (city: City) => void;
-}
-
-export default function FavoriteCities({ favorites, onSelectFavorite, onRemoveFavorite }: FavoriteCitiesProps) {
+export default function FavoriteCities({ favorites, onSelectFavorite, onRemoveFavorite }) {
   return (
     <div className="mb-4">
       <h3 className="text-lg font-semibold mb-2">Favorite Cities</h3>

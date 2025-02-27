@@ -3,14 +3,10 @@
 import { useState } from "react"
 import { Search } from "lucide-react"
 
-interface LocationSearchProps {
-  onSearch: (location: { lat: number; lon: number; name: string }) => void;
-}
-
-export default function LocationSearch({ onSearch }: LocationSearchProps) {
+export default function LocationSearch({ onSearch }) {
   const [query, setQuery] = useState("")
 
-  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSearch = async (e) => {
     e.preventDefault()
     try {
       const response = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`)
